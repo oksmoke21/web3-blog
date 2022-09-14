@@ -62,7 +62,7 @@ export async function getStaticPaths() {
   if (process.env.ENVIRONMENT === 'local') {
     provider = new ethers.providers.JsonRpcProvider();
   } else if (process.env.ENVIRONMENT === 'testnet') {
-    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`);
+    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_RINKEBY_ID}`);
     // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today');
   } else {
     provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
