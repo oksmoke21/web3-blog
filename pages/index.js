@@ -1,38 +1,34 @@
-import { css } from '@emotion/css'
-import { useContext } from 'react'
-import { useRouter } from 'next/router'
-import { ethers } from 'ethers'
-import Link from 'next/link'
-import { AccountContext } from '../context'
+import { css } from '@emotion/css';
+import { useContext } from 'react';
+import { useRouter } from 'next/router';
+import { ethers } from 'ethers';
+import Link from 'next/link';
+import { AccountContext } from '../context';
 
-import { contractAddress, ownerAddress } from '../config'
-import Blog from '../artifacts/contracts/Blog.sol/Blog.json'
+import { contractAddress, ownerAddress } from '../config';
+import Blog from '../artifacts/contracts/Blog.sol/Blog.json';
 
 export default function Home(props) {
-  
-  /* posts are fetched server side and passed in as props */
-  /* see getServerSideProps */
-  
-  const { posts } = props; // is an array of created posts (received by getServerSideProps) and will be empty if no posts are created
+  // posts are fetched server side and passed in as props via getServerSideProps
+  const { posts } = props; // array of created posts received by getServerSideProps, empty if no posts are created
   const account = useContext(AccountContext); 
-
   const router = useRouter();
-
   const navigate = async () => {
     router.push('/create-post');
-  }
+  };
 
   return (
     <div>
       <div className={postList}>
         {
-          // map over the posts array and render a button with the post title
+          // maps over the 'posts' array to seperate them and renders a button for each post in order of newest to oldest
           posts.map( (post, index) => (
-            /* link to view each individual post from mapped array */
-            /* 3rd item returned by contract function is the hash of the post */
-            <Link href={`/post/${post[2]}`} key={index}><a>
+            // link to view each individual post from mapped array
+            // 2nd item (post[1]) returned by contract function is the title of the post
+            // 3rd item (post[2]) returned by contract function is the hash of the post
+            <Link href={`/post/${post[2]}`} key={index}><a> {/* /post/q24kjfn4fn93f434nf94... (IPFS hash) */}
                 <div className={linkStyle}>
-                  <p className={postTitle}>{post[1]}</p> {/* 2nd item returned by contract function is the title of the post */} 
+                  <p className={postTitle}>{post[1]}</p>  
                   <div className={arrowContainer}>
                   <img
                       src='/right-arrow.svg'
@@ -67,23 +63,23 @@ export default function Home(props) {
 export async function getServerSideProps() {
   let provider;
   if (process.env.ENVIRONMENT === 'local') {
-    provider = new ethers.providers.JsonRpcProvider()
+    provider = new ethers.providers.JsonRpcProvider();
   } else if (process.env.ENVIRONMENT === 'testnet') {
-    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3`)
-    // provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`)
-    // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today')
+    // provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3`);
+    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`);
+    // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today');
   } else {
-    provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/')
+    provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
   }
   // provider has been set to different blockchains based upon environment
 
-  const contract = new ethers.Contract(contractAddress, Blog.abi, provider)
-  const data = await contract.fetchPosts()
+  const contract = new ethers.Contract(contractAddress, Blog.abi, provider);
+  const data = await contract.fetchPosts();
   return {
     props: {
       posts: JSON.parse(JSON.stringify(data))
     }
-  }
+  };
 }
 
 // Styling ==>
@@ -100,13 +96,13 @@ const postTitle = css`
   font-weight: bold;
   cursor: pointer;
   margin: 0;
-  padding: 20px;
+  padding: 16px;
 `
 
 const linkStyle = css`
-  border: 1px solid #ddd;
+  border: 2px solid #ddd;
   margin-top: 20px;
-  border-radius: 8px;
+  border-radius: 20px;
   display: flex;
 `
 

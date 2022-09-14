@@ -26,18 +26,18 @@ function MyApp({ Component, pageProps }) {
         },
       },
     })
-    return web3Modal
+    return web3Modal;
   }
 
   const connect = async () => {      // the connect function uses web3 modal to connect to the user's wallet
     try {
-      const web3Modal = await getWeb3Modal()
-      const connection = await web3Modal.connect()
-      const provider = new ethers.providers.Web3Provider(connection)
-      const accounts = await provider.listAccounts()
-      setAccount(accounts[0])
+      const web3Modal = await getWeb3Modal();
+      const connection = await web3Modal.connect();
+      const provider = new ethers.providers.Web3Provider(connection);
+      const accounts = await provider.listAccounts();
+      setAccount(accounts[0]);
     } catch (err) {
-      console.log('error:', err)
+      console.log('error:', err);
     }
   }
 
@@ -86,10 +86,8 @@ function MyApp({ Component, pageProps }) {
       </nav>
 
       <div className={container}> 
-        {/* "Create your first post" banner */}
         <AccountContext.Provider value = {account}>
           <Component {...pageProps} connect = {connect} />
-          {/* {console.log('Posts (pageProps) => ', pageProps)} */}
         </AccountContext.Provider>
       </div>
 

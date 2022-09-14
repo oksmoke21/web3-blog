@@ -1,103 +1,121 @@
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
-import ReactMarkdown from 'react-markdown'
-import { css } from '@emotion/css'
-import dynamic from 'next/dynamic'
-import { ethers } from 'ethers'
-import { create } from 'ipfs-http-client'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { css } from '@emotion/css';
+import { ethers } from 'ethers';
+import { create } from 'ipfs-http-client';
+import Error from 'next/error';
 
-import {
-  contractAddress
-} from '../../config'
-import Blog from '../../artifacts/contracts/Blog.sol/Blog.json'
+import { contractAddress } from '../../config';
+import Blog from '../../artifacts/contracts/Blog.sol/Blog.json';
 
-const ipfsURI = 'https://ipfs.io/ipfs/'
-const client = create('https://ipfs.infura.io:5001/api/v0')
+const ipfsURI = 'https://ipfs.io/ipfs/';
 
-const SimpleMDE = dynamic(
-  () => import('react-simplemde-editor'),
-  { ssr: false }
-)
+export default function Post(props) {
+  // IPFS config taken from server-side code
+  const { auth } = props;
+  const client = create({
+    host: "ipfs.infura.io",
+    port: 5001,
+    protocol: "https",
+    headers: {
+      authorization: auth,
+    },
+  });
 
-export default function Post() {
-  const [post, setPost] = useState(null)
-  const [editing, setEditing] = useState(true)
-  const router = useRouter()
-  const { id } = router.query
+  const [post, setPost] = useState(null);
+  const [editing, setEditing] = useState(true);
+  const router = useRouter();
+  const { id } = router.query;
 
   useEffect(() => {
     fetchPost()
-  }, [id])
-  async function fetchPost() {
-    /* we first fetch the individual post by ipfs hash from the network */
-    if (!id) return
-    let provider
-    if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'local') {
-      provider = new ethers.providers.JsonRpcProvider()
-    } else if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'testnet') {
-      provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today')
-    } else {
-      provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/')
-    }
-    const contract = new ethers.Contract(contractAddress, Blog.abi, provider)
-    const val = await contract.fetchPost(id)
-    const postId = val[0].toNumber()
+  }, [id]);
 
-    /* next we fetch the IPFS metadata from the network */
-    const ipfsUrl = `${ipfsURI}/${id}`
-    const response = await fetch(ipfsUrl)
-    const data = await response.json()
-    if(data.coverImage) {
-      let coverImagePath = `${ipfsURI}/${data.coverImage}`
-      data.coverImagePath = coverImagePath
+  const fetchPost = async () => {
+    // fetching individual post by ipfs hash
+    if (!id) {
+      const err = new Error('ERROR: No post with given IPFS hash ID exists');
+      throw err.props;
+    };
+    let provider;
+    if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'local') {
+      provider = new ethers.providers.JsonRpcProvider();
+    } else if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'testnet') {
+      // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today');
+      provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`);
+    } else {
+      provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
     }
-    /* finally we append the post ID to the post data */
+    const contract = new ethers.Contract(contractAddress, Blog.abi, provider);
+    const val = await contract.fetchPost(id);
+    const postId = val[0].toNumber();
+
+    // fetching IPFS metadata
+    const ipfsUrl = `${ipfsURI}/${id}`;
+    const response = await fetch(ipfsUrl);
+    const data = await response.json();
+    if (data.coverImage) {
+      let coverImagePath = `${ipfsURI}/${data.coverImage}`;
+      data.coverImagePath = coverImagePath;
+    }
+    // appending the post ID to the post data
     /* we need this ID to make updates to the post */
     data.id = postId;
-    setPost(data)
+    setPost(data);
   }
 
-  async function savePostToIpfs() {
+  const savePostToIpfs = async () => {
     try {
-      const added = await client.add(JSON.stringify(post))
-      return added.path
+      const added = await client.add(JSON.stringify(post));
+      return added.path;
     } catch (err) {
-      console.log('error: ', err)
+      console.log('error: ', err);
     }
   }
 
-  async function updatePost() {
-    const hash = await savePostToIpfs()
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const signer = provider.getSigner()
-    const contract = new ethers.Contract(contractAddress, Blog.abi, signer)
-    await contract.updatePost(post.id, post.title, hash, true)
-    router.push('/')
+  const updatePost = async () => {
+    try {
+      const hash = await savePostToIpfs()
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const contract = new ethers.Contract(contractAddress, Blog.abi, signer)
+      await contract.updatePost(post.id, post.title, hash, true)
+      router.push('/')
+    } catch (err) {
+      console.log('Updating post error: ', err)
+    }
   }
 
-  if (!post) return null
+  const onChange = async (e) => {
+    setPost(() => ({ ...post, [e.target.name]: e.target.value }));
+  }
+
+  if (!post) 
+  {
+    return null;
+  }
 
   return (
     <div className={container}>
       {
-      /* editing state will allow the user to toggle between */
-      /*  a markdown editor and a markdown renderer */
-      }
-      {
         editing && (
           <div>
             <input
-              onChange={e => setPost({ ...post, title: e.target.value })}
+              onChange={onChange}
               name='title'
-              placeholder='Give it a title ...'
+              placeholder='Add updated title'
               value={post.title}
               className={titleStyle}
             />
-            <SimpleMDE
-              className={mdEditor}
-              placeholder="What's on your mind?"
+            <hr></hr>
+            <input
+              onChange={onChange}
+              name='content'
+              placeholder="Add updated content"
               value={post.content}
-              onChange={value => setPost({ ...post, content: value })}
+              className={contentStyle}
+              size={45}
+              type='text'
             />
             <button className={button} onClick={updatePost}>Update post</button>
           </div>
@@ -116,15 +134,28 @@ export default function Post() {
             }
             <h1>{post.title}</h1>
             <div className={contentContainer}>
-              <ReactMarkdown>{post.content}</ReactMarkdown>
+              {post.content}
             </div>
           </div>
         )
       }
-      <button className={button} onClick={() => setEditing(editing ? false : true)}>{ editing ? 'View post' : 'Edit post'}</button>
+      <button className={button} onClick={() => setEditing(editing ? false : true)}>{editing ? 'View post' : 'Edit post'}</button>
     </div>
   )
 }
+
+export async function getServerSideProps() {
+  const projectId = `${process.env.INFURA_ID}`;
+  const projectSecret = `${process.env.INFURA_SECRET}`;
+  const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
+  return {
+    props: {
+      auth: auth
+    }
+  };
+}
+
+// Styling ==>
 
 const button = css`
   background-color: #fafafa;
@@ -151,16 +182,27 @@ const titleStyle = css`
   }
 `
 
-const mdEditor = css`
-  margin-top: 40px;
+const contentStyle = css`
+  margin-top: 60px;
+  margin-bottom: 40px;
+  border: none;
+  outline: none;
+  background-color: inherit;
+  size: 200px;
+  font-size: 30px;  
+  font-weight: 600;
+  &::placeholder {
+    color: #999999;
+  }
 `
+
 
 const coverImageStyle = css`
   width: 900px;
 `
 
 const container = css`
-  width: 900px;
+  width: 800px;
   margin: 0 auto;
 `
 

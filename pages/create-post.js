@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from 'react' // new
-import { useRouter } from 'next/router'
-import { css } from '@emotion/css'
-import { ethers } from 'ethers'
-import { create } from 'ipfs-http-client'
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { css } from '@emotion/css';
+import { ethers } from 'ethers';
+import { create } from 'ipfs-http-client';
+import Error from 'next/error';
 
-import {contractAddress} from '../config'
-import Blog from '../artifacts/contracts/Blog.sol/Blog.json'
+import { contractAddress } from '../config';
+import Blog from '../artifacts/contracts/Blog.sol/Blog.json';
 
-const initialState = { title: '', content: '' }
+const initialState = { title: '', content: '' };
 
 export default function CreatePost(props) {
     const { auth } = props; // destructuring the prop as it is currently an object
@@ -19,28 +20,31 @@ export default function CreatePost(props) {
             authorization: auth,
         },
     });
-    const [post, setPost] = useState(initialState)
-    const [image, setImage] = useState(null)
-    const [loaded, setLoaded] = useState(false)
 
-    const fileRef = useRef(null)
+    const [post, setPost] = useState(initialState);
+    const [image, setImage] = useState(null);
+
+    const fileRef = useRef(null);
     const { title, content } = post;
     const router = useRouter();
 
     function onChange(e) {
-        setPost(() => ({ ...post, [e.target.name]: e.target.value }))
+        setPost(() => ({ ...post, [e.target.name]: e.target.value }));
     }
 
     const createNewPost = async () => {
         // saves post to ipfs then anchors to smart contract
-        try{
-            if (!title || !content) return;
+        try {
+            if (!title || !content || !image) {
+                const err = new Error('ERROR: Cannot upload blog post without all three present: Title, Content, Image');
+                throw err.props;
+            }
             const hash = await savePostToIpfs();
             console.log(hash)
             await savePost(hash);
             router.push(`/`);
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
     }
 
@@ -58,35 +62,35 @@ export default function CreatePost(props) {
         // anchor post to smart contract
         if (typeof window.ethereum !== 'undefined') { // checking if user is signed in
             try {
-                const provider = new ethers.providers.Web3Provider(window.ethereum)
-                const signer = provider.getSigner()
-                const contract = new ethers.Contract(contractAddress, Blog.abi, signer)
-                console.log('contract: ', contract)
-                const val = await contract.createPost(post.title, hash)
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(contractAddress, Blog.abi, signer);
+                console.log('contract: ', contract);
+                const val = await contract.createPost(post.title, hash);
 
                 //optional - wait for transaction to be confirmed before rerouting
                 await provider.waitForTransaction(val.hash);
 
-                console.log('val: ', val)
+                console.log('val: ', val);
             } catch (err) {
-                console.log(err)
+                console.log(err);
             }
         }
     }
 
     const triggerOnChange = async () => {
-        // trigger handleFileChange handler of hidden file input on button click
-        fileRef.current.click()
+        // triggers handleFileChange handler of hidden file input on button click
+        fileRef.current.click();
     }
 
-    const handleFileChange = async(e) => {
+    const handleFileChange = async (e) => {
         try {
             // upload cover image to ipfs and save hash to state
-            const uploadedFile = e.target.files[0]
-            if (!uploadedFile) return
-            const added = await client.add(uploadedFile)
-            setPost(state => ({ ...state, coverImage: added.path }))
-            setImage(uploadedFile)
+            const uploadedFile = e.target.files[0];
+            if (!uploadedFile) return 0;
+            const added = await client.add(uploadedFile);
+            setPost(state => ({ ...state, coverImage: added.path }));
+            setImage(uploadedFile);
         } catch (err) {
             console.log(err)
         }
@@ -119,19 +123,17 @@ export default function CreatePost(props) {
 
             <div>
                 {
-                    loaded && (
-                        <>
-                            <button
-                                className={button}
-                                type='button'
-                                onClick={createNewPost}
-                            >Publish</button>
-                            <button
-                                onClick={triggerOnChange}
-                                className={button}
-                            >Add cover image</button>
-                        </>
-                    )
+                    <>
+                        <button
+                            className={button}
+                            type='button'
+                            onClick={createNewPost}
+                        >Publish</button>
+                        <button
+                            onClick={triggerOnChange}
+                            className={button}
+                        >Add cover image</button>
+                    </>
                 }
             </div>
             <input
@@ -150,12 +152,11 @@ export async function getServerSideProps() {
     const projectId = `${process.env.INFURA_ID}`;
     const projectSecret = `${process.env.INFURA_SECRET}`;
     const auth = 'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
-    console.log(auth)
-    return{
+    return {
         props: {
             auth: auth
         }
-    }
+    };
 }
 
 // Styling ==>
