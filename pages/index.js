@@ -5,12 +5,7 @@ import { ethers } from 'ethers'
 import Link from 'next/link'
 import { AccountContext } from '../context'
 
-// import contract address and contract owner address
-import {
-  contractAddress, ownerAddress
-} from '../config'
-
-// import Contract ABI
+import { contractAddress, ownerAddress } from '../config'
 import Blog from '../artifacts/contracts/Blog.sol/Blog.json'
 
 export default function Home(props) {
@@ -34,8 +29,8 @@ export default function Home(props) {
           // map over the posts array and render a button with the post title
           posts.map( (post, index) => (
             /* link to view each individual post from mapped array */
-            <Link href={`/post/${post[2]}`} key={index}> {/* 3rd item returned by contract function is the hash of the post */} 
-              <a>
+            /* 3rd item returned by contract function is the hash of the post */
+            <Link href={`/post/${post[2]}`} key={index}><a>
                 <div className={linkStyle}>
                   <p className={postTitle}>{post[1]}</p> {/* 2nd item returned by contract function is the title of the post */} 
                   <div className={arrowContainer}>
@@ -46,8 +41,7 @@ export default function Home(props) {
                     />
                   </div>
                 </div>
-              </a>
-            </Link>
+              </a></Link>
           ))
         }
       </div>
@@ -75,7 +69,8 @@ export async function getServerSideProps() {
   if (process.env.ENVIRONMENT === 'local') {
     provider = new ethers.providers.JsonRpcProvider()
   } else if (process.env.ENVIRONMENT === 'testnet') {
-    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`)
+    provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3`)
+    // provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_ID}`)
     // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today')
   } else {
     provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/')

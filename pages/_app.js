@@ -32,7 +32,6 @@ function MyApp({ Component, pageProps }) {
   const connect = async () => {      // the connect function uses web3 modal to connect to the user's wallet
     try {
       const web3Modal = await getWeb3Modal()
-      console.log("web3Modal: ",web3Modal);
       const connection = await web3Modal.connect()
       const provider = new ethers.providers.Web3Provider(connection)
       const accounts = await provider.listAccounts()
@@ -47,34 +46,26 @@ function MyApp({ Component, pageProps }) {
 
       <nav className={nav}>
         <div className={header}>
-          <Link href="/">
-            <a>
+          <Link href="/"><a>
               <img src='/dapplooker_logo.jpg' alt="DappLooker Logo" style={{ width: '50px', borderRadius: '50%' }} />
-            </a>
-          </Link>
-          <Link href="/">
-            <a>
+            </a></Link>
+          <Link href="/"><a>
               <div className={titleContainer}>
                 <h2 className={title}>Web3 Blog</h2>
                 <p className={description}>DappLooker</p>
               </div>
-            </a>
-          </Link>
+            </a></Link>
 
           <div className={linkContainer}>
-            <Link href="/" >
-              <a className={link}>
+            <Link href="/" ><a className={link}>
                 Home
-              </a>
-            </Link>
+              </a></Link>
             {
               // if the signed in user is the contract owner, we show the nav link to create a new post
               (account === ownerAddress) && (
-                <Link href="/create-post">
-                  <a className={link}>
+                <Link href="/create-post"><a className={link}>
                     Create Post
-                  </a>
-                </Link>
+                  </a></Link>
               )
             }
           </div>
@@ -98,6 +89,7 @@ function MyApp({ Component, pageProps }) {
         {/* "Create your first post" banner */}
         <AccountContext.Provider value = {account}>
           <Component {...pageProps} connect = {connect} />
+          {/* {console.log('Posts (pageProps) => ', pageProps)} */}
         </AccountContext.Provider>
       </div>
 
