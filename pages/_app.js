@@ -47,7 +47,7 @@ function MyApp({ Component, pageProps }) {
       <nav className={nav}>
         <div className={header}>
           <Link href="/"><a>
-              <img src='/dapplooker_logo.jpg' alt="DappLooker Logo" style={{ width: '50px', borderRadius: '50%' }} />
+              <img src='/logo.jpg' alt="Logo" style={{ width: '50px', borderRadius: '50%' }} />
             </a></Link>
           <Link href="/"><a>
               <div className={titleContainer}>
