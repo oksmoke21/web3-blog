@@ -41,8 +41,8 @@ export default function Post(props) {
     if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'local') {
       provider = new ethers.providers.JsonRpcProvider();
     } else if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'testnet') {
-      // provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.matic.today');
-      provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.INFURA_RINKEBY_ID}`);
+      // have to use NEXT_PUBLIC_ env variable as this line of code is in frontend
+      provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_RINKEBY_ID}`);
     } else {
       provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
     }
