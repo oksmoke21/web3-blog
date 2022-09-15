@@ -32,36 +32,40 @@ export default function Post(props) {
   }, [id]);
 
   const fetchPost = async () => {
-    // fetching individual post by ipfs hash
-    if (!id) {
-      const err = new Error('ERROR: No post with given IPFS hash ID exists');
-      throw err.props;
-    };
-    let provider;
-    if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'local') {
-      provider = new ethers.providers.JsonRpcProvider();
-    } else if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'testnet') {
-      // have to use NEXT_PUBLIC_ env variable as this line of code is in frontend
-      provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_RINKEBY_ID}`);
-    } else {
-      provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
-    }
-    const contract = new ethers.Contract(contractAddress, Blog.abi, provider);
-    const val = await contract.fetchPost(id);
-    const postId = val[0].toNumber();
+    try {
+      // fetching individual post by ipfs hash
+      if (!id) {
+        const err = new Error('ERROR: No post with given IPFS hash ID exists');
+        throw err.props;
+      };
+      let provider;
+      if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'local') {
+        provider = new ethers.providers.JsonRpcProvider();
+      } else if (process.env.NEXT_PUBLIC_ENVIRONMENT === 'testnet') {
+        // have to use NEXT_PUBLIC_ env variable as this line of code is in frontend
+        provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_RINKEBY_ID}`);
+      } else {
+        provider = new ethers.providers.JsonRpcProvider('https://polygon-rpc.com/');
+      }
+      const contract = new ethers.Contract(contractAddress, Blog.abi, provider);
+      const val = await contract.fetchPost(id);
+      const postId = val[0].toNumber();
 
-    // fetching IPFS metadata
-    const ipfsUrl = `${ipfsURI}/${id}`;
-    const response = await fetch(ipfsUrl);
-    const data = await response.json();
-    if (data.coverImage) {
-      let coverImagePath = `${ipfsURI}/${data.coverImage}`;
-      data.coverImagePath = coverImagePath;
+      // fetching IPFS metadata
+      const ipfsUrl = `${ipfsURI}/${id}`;
+      const response = await fetch(ipfsUrl);
+      const data = await response.json();
+      if (data.coverImage) {
+        let coverImagePath = `${ipfsURI}/${data.coverImage}`;
+        data.coverImagePath = coverImagePath;
+      }
+      // appending the post ID to the post data
+      /* we need this ID to make updates to the post */
+      data.id = postId;
+      setPost(data);
+    } catch (err) {
+      console.log(err);
     }
-    // appending the post ID to the post data
-    /* we need this ID to make updates to the post */
-    data.id = postId;
-    setPost(data);
   }
 
   const savePostToIpfs = async () => {
