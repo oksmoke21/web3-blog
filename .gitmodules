@@ -1,0 +1,3 @@
+[submodule "web3blog-subgraph"]
+	path = web3blog-subgraph
+	url = https://github.com/oksmoke21/web3blog-subgraph
