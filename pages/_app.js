@@ -52,7 +52,7 @@ function MyApp({ Component, pageProps }) {
           <Link href="/"><a>
               <div className={titleContainer}>
                 <h2 className={title}>Web3 Blog</h2>
-                <p className={description}>DappLooker</p>
+                <p className={description}>Ayush Ranjan</p>
               </div>
             </a></Link>
 
